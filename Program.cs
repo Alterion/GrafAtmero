@@ -9,8 +9,9 @@ namespace GrafAtmero
 {
     class Program
     {
-        static int max = 0, elozoMax = 0, next = -1;
-        const int N = 100;
+        static int /*max = 0, elozoMax = 0, */next = -1;
+        static double max = 0, elozoMax = 0;
+        const int N = 20;
         /*static int[,] G={{0,2,5,0,0,0,0,0,0,0,0},
                            {2,0,0,0,1,0,0,0,0,0,3},
                            {5,0,0,0,3,3,0,4,0,0,0},
@@ -24,24 +25,43 @@ namespace GrafAtmero
                            {0,3,0,0,2,0,0,0,0,3,0}};*/
         static int[,] G;
 
-        static int[] SzCs, Tav;
+        static int[] SzCs/*, Tav*/, t;
+        static double[] Tav;
+
+        static List<Pont> l = new List<Pont>();
 
         public static void generateGraph(int p)
         {
             Random random = new Random();
             int randomnumber = 0;
-            for (int i = 0; i < N; i++)
+            for (int i = 2; i < N; i++)
             {
-                for (int j = i + 1; j < N; j++)
+                /*for (int j = i + 1; j < N; j++)
                 {
                     randomnumber = random.Next(0, 100);
                     if (randomnumber >= 100 - p)
-                    {
-                        randomnumber = random.Next(1, 100);
+                    {*/
+                        t = new int[10];
+                        for (int k = 0; k < 10; k++)
+                        {
+                            t[k] = 0;
+                        }
+                        randomnumber = random.Next(1, 10);
+                        for(int k = 0; k < randomnumber; k++)
+                        {
+                            int f = random.Next(1, N);
+                            while(t.Contains(f))
+                            {
+                                f = random.Next(1, N);
+                            }
+                            t[k] = f;
+                        }
+                        l.Add(new Pont(random.Next(0, 100), random.Next(0, 100), t));
+                        /*randomnumber = random.Next(1, 100);
                         G[i, j] = randomnumber;
-                        G[j, i] = randomnumber;
-                    }
-                }
+                        G[j, i] = randomnumber;*/
+                    /*}
+                }*/
             }
 
         }
@@ -50,9 +70,11 @@ namespace GrafAtmero
         {
             for (int i = 0; i < N; i++)
             {
-                for (int j = 0; j < N; j++)
+                Console.WriteLine(l[i].x + "   " + l[i].y);
+                for (int j = 0; j < /*N*/10; j++)
                 {
-                    Console.Write(G[i, j] + " ");
+                    Console.Write(l[i].szomszedok[j] + "  ");
+                    //Console.Write(G[i, j] + " ");
                 }
                 Console.WriteLine();
             }
@@ -60,7 +82,8 @@ namespace GrafAtmero
 
         public static void Dijkstra(int[,] G, int n, int cs)
         {
-            int i, j, m, im = 0;
+            int i, j, /*m,*/ im = 0;
+            double m;
             max = 0;
             for (i = 0; i < n; i++)
             {
@@ -88,15 +111,25 @@ namespace GrafAtmero
 
                 for (j = 0; j < n; j++)
                 {
-                    if ((G[im, j] > 0) && (SzCs[j] == 1) && (Tav[im] + G[im, j] < Tav[j]))
+                    if (!l[im].szomszedok.Contains(j))
+                        continue;
+                    int index = 0;
+                    for(int q = 0 ; q < 10; q++)
+                    {
+                        if (l[im].szomszedok[q] == j)
+                        {
+                            index = l[im].szomszedok[q];
+                            break;
+                        }
+                    }
+
+                    double tavolsag = Math.Sqrt((Math.Abs(l[im].x - l[index].x) * Math.Abs(l[im].x - l[index].x)) + (Math.Abs(l[im].y - l[index].y) * Math.Abs(l[im].y - l[index].y)));
+                    if ((SzCs[j] == 1) && (Tav[im] + tavolsag < Tav[j]))
+                        Tav[j] = Tav[im] + tavolsag;
+                    /*if ((G[im, j] > 0) && (SzCs[j] == 1) && (Tav[im] + G[im, j] < Tav[j]))
                     {
                         Tav[j] = Tav[im] + G[im, j];
-                        /*if (Tav[j] > max)
-                        {
-                            max = Tav[j];
-                            next = j;
-                        }*/
-                    }
+                    }*/
 
                 }
             }
@@ -107,13 +140,18 @@ namespace GrafAtmero
             int i;
             G = new int[N, N];
             SzCs = new int[N];
-            Tav = new int[N];
+            Tav = new double[N];
+            //Tav = new int[N];
             Stopwatch sw = new Stopwatch();
+            int[] tomb = {1,0,0,0,0,0,0,0,0,0};
+            l.Add(new Pont(0,0,tomb));
+            tomb[0] = 8;
+            l.Add(new Pont(100, 100, tomb));
             generateGraph(75);
             //kiir();
             Console.WriteLine("Indulócsúcs: " + 0);
             sw.Start();
-            Dijkstra(G, N, 5);
+            Dijkstra(G, N, 0);
             for (i = 0; i < N; i++)
             {
                 if (Tav[i] > max && Tav[i] != int.MaxValue - 1)
