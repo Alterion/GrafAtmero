@@ -8,15 +8,13 @@ namespace GrafAtmero
 {
     class Pont
     {
-        public int x {get; set;}
-        public int y { get; set; }
-        public int[] szomszedok;
+        public double x {get; set;}
+        public double y { get; set; }
 
-        public Pont(int _x, int _y, int[] t)
+        public Pont(double _x, double _y)
         {
             x = _x;
             y = _y;
-            szomszedok = t;
         }
         
     }
