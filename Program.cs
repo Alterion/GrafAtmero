@@ -11,20 +11,8 @@ namespace GrafAtmero
     {
         static int next = -1, kezdoCsucs;
         static double max = 0, elozoMax = 0;
-        const int N = 10, radius = 10;
-        /*static int[,] G={{0,2,5,0,0,0,0,0,0,0,0},
-                           {2,0,0,0,1,0,0,0,0,0,3},
-                           {5,0,0,0,3,3,0,4,0,0,0},
-                           {0,0,0,0,2,2,1,0,0,0,0},
-                           {0,1,3,2,0,0,0,2,0,4,2},
-                           {0,0,3,2,0,0,2,0,0,0,0},
-                           {0,0,0,1,0,2,0,3,0,0,0},
-                           {0,0,4,0,2,0,3,0,5,0,0},
-                           {0,0,0,0,0,0,0,5,0,3,0},
-                           {0,0,0,0,4,0,0,0,3,0,3},
-                           {0,3,0,0,2,0,0,0,0,3,0}};*/
-        static int[,] G;
-
+        const int N = 100, radius = 50;
+        static double[,] dist = new double[N,N];
         static int[] SzCs;
         static double[] Tav;
 
@@ -56,13 +44,12 @@ namespace GrafAtmero
 
         public static void kiir()
         {
-            for (int i = 0; i < N; i++)
-            {
-                Console.WriteLine(l[i].x + "   " + l[i].y);
-            }
+            Console.WriteLine();
+            Console.WriteLine("Következő csúcs: " + l[next].x + "  " + l[next].y + " előző maximum  " + elozoMax.ToString("0.00") + " következő csúcs távolsága  " + max.ToString("0.00"));
+            Console.WriteLine("----------");
         }
 
-        public static void Dijkstra(int[,] G, int n, int cs)
+        public static void Dijkstra(int n, int cs)
         {
             int i, j, im = 0;
             double m;
@@ -96,29 +83,51 @@ namespace GrafAtmero
                     double tavolsag = Math.Sqrt((Math.Abs(l[im].x - l[j].x) * Math.Abs(l[im].x - l[j].x)) + (Math.Abs(l[im].y - l[j].y) * Math.Abs(l[im].y - l[j].y)));
                     if ((SzCs[j] == 1) && (Tav[im] + tavolsag < Tav[j]))
                         Tav[j] = Tav[im] + tavolsag;
-                    /*if ((G[im, j] > 0) && (SzCs[j] == 1) && (Tav[im] + G[im, j] < Tav[j]))
-                    {
-                        Tav[j] = Tav[im] + G[im, j];
-                    }*/
-
                 }
+            }
+        }
+
+        public static void Floyd(int n )
+        {
+            int i, j;
+
+            for (i = 0; i < n; i++)
+                for (j = 0; j < n; j++)
+                {
+                    if (i == j)
+                    {
+                        dist[i, j] = 0;
+                    }
+                    else
+                    {
+                        dist[i, j] = Math.Sqrt((Math.Abs(l[i].x - l[j].x) * Math.Abs(l[i].x - l[j].x)) + (Math.Abs(l[i].y - l[j].y) * Math.Abs(l[i].y - l[j].y)));
+                    }
+                }
+ 
+            for (int k = 0; k < n; k++)
+            {
+                for (i = 0; i < n; i++)
+                    for (j = 0; j < n; j++)
+                    {
+                        if ((dist[i, k] * dist[k, j] != 0) && (i != j))
+                            if ((dist[i, k] + dist[k, j] < dist[i, j]) || (dist[i, j] == 0))
+                                dist[i, j] = dist[i, k] + dist[k, j];
+                    }                
             }
         }
 
         static void Main(string[] args)
         {
-            int i;
-            //G = new int[N, N];
+            int i ,j;
             SzCs = new int[N];
             Tav = new double[N];
             Random r = new Random();
             Stopwatch sw = new Stopwatch();            
-            generateGraph(0);      //0-négyzet, 1-kör         
-            //kiir();
+            generateGraph(0);      //0-négyzet, 1-kör              
+            sw.Start();
             kezdoCsucs = r.Next(0, N);
             Console.WriteLine("Indulócsúcs: " + l[kezdoCsucs].x + "   " + l[kezdoCsucs].y);
-            sw.Start();
-            Dijkstra(G, N, kezdoCsucs);
+            Dijkstra(N, kezdoCsucs);
             for (i = 0; i < N; i++)
             {
                 if (Tav[i] > max && Tav[i] != int.MaxValue - 1)
@@ -127,15 +136,11 @@ namespace GrafAtmero
                     next = i;
                 }
             }
-            /*for (int j = 0; j < N; j++)
-                Console.Write(Tav[j] + " ");*/
-            Console.WriteLine();
-            Console.WriteLine("Következő csúcs: " + l[next].x + "  " + l[next].y + " előző maximum  " + elozoMax.ToString("0.00") + " következő csúcs távolsága  " + max.ToString("0.00"));
-            Console.WriteLine("----------");
+            kiir();
             do
             {
                 elozoMax = max;
-                Dijkstra(G, N, next);
+                Dijkstra(N, next);
                 for (i = 0; i < N; i++)
                 {
                     if (Tav[i] > max && Tav[i] != int.MaxValue - 1)
@@ -144,14 +149,28 @@ namespace GrafAtmero
                         next = i;
                     }
                 }
-                /*for (int j = 0; j < N; j++)
-                    Console.Write(Tav[j] + " ");*/
-                Console.WriteLine();
-                Console.WriteLine("Következő csúcs: " + l[next].x + "  " + l[next].y + " előző maximum  " + elozoMax.ToString("0.00") + " következő csúcs távolsága  " + max.ToString("0.00"));
-                Console.WriteLine("----------");
+                kiir();
             } while (max > elozoMax);
             sw.Stop();
-            Console.WriteLine("Eltelt idő: " + sw.Elapsed);
+            Console.WriteLine("Dijkstra eredmény: " + max);
+            Console.WriteLine("Dijkstra alatt eltelt idő: " + sw.Elapsed);
+
+            max = 0;
+            sw.Start();
+            Floyd(N);
+            for (i = 0; i < N; i++)
+            {
+                for (j = i + 1; j < N; j++)
+                {
+                    if (Math.Abs(dist[i, i] - dist[i, j]) > max)
+                    {
+                        max = Math.Abs(dist[i, i] - dist[i, j]);
+                    }
+                }
+            }
+            sw.Stop();
+            Console.WriteLine("Floyd-Warshall eredmény: " + max);
+            Console.WriteLine("Floyd-Warshall alatt eltelt idő: " + sw.Elapsed);
             Console.ReadLine();
         }
     }
