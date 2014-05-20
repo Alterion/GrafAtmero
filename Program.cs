@@ -11,15 +11,17 @@ namespace GrafAtmero
     {
         static int next = -1, kezdoCsucs;
         static double max = 0, elozoMax = 0;
-        const int N = 100, radius = 50;
+        const int N = 10, radius = 50;
         static double[,] dist = new double[N,N];
         static int[] SzCs;
         static double[] Tav;
+        static int[,] M = new int[N, N];
 
         static List<Pont> l = new List<Pont>();
 
         public static void generateGraph(int p)
         {
+            l.Clear();
             Random random = new Random();
             if (p == 0)
             {              
@@ -42,6 +44,27 @@ namespace GrafAtmero
             }
         }
 
+        public static void erdosRenyi(int p)
+        {
+            M = new int[N, N];
+            Random random = new Random();
+            int randomnumber = 0;
+            for (int i = 0; i < N; i++)
+            {
+                for (int j = i + 1; j < N; j++)
+                {
+                    randomnumber = random.Next(0, 100);
+                    if (randomnumber >= 100 - p)
+                    {
+                        randomnumber = random.Next(1, 100);
+                        M[i, j] = randomnumber;
+                        M[j, i] = randomnumber;
+                    }
+                }
+            }
+
+        }
+
         public static void kiir()
         {
             Console.WriteLine();
@@ -49,7 +72,7 @@ namespace GrafAtmero
             Console.WriteLine("----------");
         }
 
-        public static void Dijkstra(int n, int cs)
+        public static void Dijkstra(int n, int cs, int mod) //mod = 0 ha tejles mod = 1 ha erdős
         {
             int i, j, im = 0;
             double m;
@@ -80,14 +103,22 @@ namespace GrafAtmero
 
                 for (j = 0; j < n; j++)
                 {
-                    double tavolsag = Math.Sqrt((Math.Abs(l[im].x - l[j].x) * Math.Abs(l[im].x - l[j].x)) + (Math.Abs(l[im].y - l[j].y) * Math.Abs(l[im].y - l[j].y)));
-                    if ((SzCs[j] == 1) && (Tav[im] + tavolsag < Tav[j]))
-                        Tav[j] = Tav[im] + tavolsag;
+                    if (mod == 0)
+                    {
+                        double tavolsag = Math.Sqrt((Math.Abs(l[im].x - l[j].x) * Math.Abs(l[im].x - l[j].x)) + (Math.Abs(l[im].y - l[j].y) * Math.Abs(l[im].y - l[j].y)));
+                        if ((SzCs[j] == 1) && (Tav[im] + tavolsag < Tav[j]))
+                            Tav[j] = Tav[im] + tavolsag;
+                    }
+                    if(mod == 1)
+                    {
+                        if ((M[im,j] > 0) && (SzCs[j] == 1) && (Tav[im] + M[im,j] < Tav[j]))
+                            Tav[j] = Tav[im] + M[im, j];
+                    }
                 }
             }
         }
 
-        public static void Floyd(int n )
+        public static void Floyd(int n, int mod) //mod = 0 ha tejles mod = 1 ha erdős
         {
             int i, j;
 
@@ -100,7 +131,14 @@ namespace GrafAtmero
                     }
                     else
                     {
-                        dist[i, j] = Math.Sqrt((Math.Abs(l[i].x - l[j].x) * Math.Abs(l[i].x - l[j].x)) + (Math.Abs(l[i].y - l[j].y) * Math.Abs(l[i].y - l[j].y)));
+                        if (mod == 0)
+                        {
+                            dist[i, j] = Math.Sqrt((Math.Abs(l[i].x - l[j].x) * Math.Abs(l[i].x - l[j].x)) + (Math.Abs(l[i].y - l[j].y) * Math.Abs(l[i].y - l[j].y)));
+                        }
+                        if (mod == 1)
+                        {
+                            dist[i, j] = M[i, j];
+                        }
                     }
                 }
  
@@ -119,28 +157,22 @@ namespace GrafAtmero
         static void Main(string[] args)
         {
             int i ,j;
+            double osszDijkstra = 0, osszFloyd = 0;
             SzCs = new int[N];
             Tav = new double[N];
             Random r = new Random();
-            Stopwatch sw = new Stopwatch();            
-            generateGraph(0);      //0-négyzet, 1-kör              
-            sw.Start();
-            kezdoCsucs = r.Next(0, N);
-            Console.WriteLine("Indulócsúcs: " + l[kezdoCsucs].x + "   " + l[kezdoCsucs].y);
-            Dijkstra(N, kezdoCsucs);
-            for (i = 0; i < N; i++)
+            Stopwatch sw = new Stopwatch();
+            for (int x = 0; x < 100; x++)
             {
-                if (Tav[i] > max && Tav[i] != int.MaxValue - 1)
-                {
-                    max = Tav[i];
-                    next = i;
-                }
-            }
-            kiir();
-            do
-            {
-                elozoMax = max;
-                Dijkstra(N, next);
+                max = 0;
+                elozoMax = 0;
+                Console.WriteLine();
+                generateGraph(0);      //0-négyzet, 1-kör   
+                erdosRenyi(75);
+                sw.Start();
+                kezdoCsucs = r.Next(0, N);
+                Console.WriteLine("Indulócsúcs: " + l[kezdoCsucs].x + "   " + l[kezdoCsucs].y);
+                Dijkstra(N, kezdoCsucs, 0);
                 for (i = 0; i < N; i++)
                 {
                     if (Tav[i] > max && Tav[i] != int.MaxValue - 1)
@@ -150,27 +182,44 @@ namespace GrafAtmero
                     }
                 }
                 kiir();
-            } while (max > elozoMax);
-            sw.Stop();
-            Console.WriteLine("Dijkstra eredmény: " + max);
-            Console.WriteLine("Dijkstra alatt eltelt idő: " + sw.Elapsed);
-
-            max = 0;
-            sw.Start();
-            Floyd(N);
-            for (i = 0; i < N; i++)
-            {
-                for (j = i + 1; j < N; j++)
+                do
                 {
-                    if (Math.Abs(dist[i, i] - dist[i, j]) > max)
+                    elozoMax = max;
+                    Dijkstra(N, next, 0);
+                    for (i = 0; i < N; i++)
                     {
-                        max = Math.Abs(dist[i, i] - dist[i, j]);
+                        if (Tav[i] > max && Tav[i] != int.MaxValue - 1)
+                        {
+                            max = Tav[i];
+                            next = i;
+                        }
+                    }
+                    kiir();
+                } while (max > elozoMax);
+                sw.Stop();
+                Console.WriteLine("Dijkstra eredmény: " + max.ToString("0.0000"));
+                Console.WriteLine("Dijkstra alatt eltelt idő: " + sw.Elapsed);
+                osszDijkstra += max;
+                max = 0;
+                sw.Start();
+                Floyd(N, 0);
+                for (i = 0; i < N; i++)
+                {
+                    for (j = i + 1; j < N; j++)
+                    {
+                        if (Math.Abs(dist[i, i] - dist[i, j]) > max)
+                        {
+                            max = Math.Abs(dist[i, i] - dist[i, j]);
+                        }
                     }
                 }
+                sw.Stop();
+                Console.WriteLine("Floyd-Warshall eredmény: " + max.ToString("0.0000"));
+                Console.WriteLine("Floyd-Warshall alatt eltelt idő: " + sw.Elapsed);
+                osszFloyd += max;
             }
-            sw.Stop();
-            Console.WriteLine("Floyd-Warshall eredmény: " + max);
-            Console.WriteLine("Floyd-Warshall alatt eltelt idő: " + sw.Elapsed);
+            Console.WriteLine("Dijkstra összesen: " + (osszDijkstra / 100).ToString("0.0000"));
+            Console.WriteLine("Floyd-Warshall összesen: " + (osszFloyd / 100).ToString("0.0000"));
             Console.ReadLine();
         }
     }
